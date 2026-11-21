@@ -50,9 +50,11 @@ def call_ai(system_prompt: str, user_prompt: str, params: AIParams) -> str:
         response = client.messages.create(
             model=params.model,
             max_tokens=params.max_tokens,
-            temperature=params.temperature,
             system=system_prompt,
             messages=[{"role": "user", "content": user_prompt}],
+            # 최신 SDK가 temperature를 타입 파라미터로 노출하지 않는 경우를 대비해
+            # extra_body로 전달한다(Anthropic Messages API 자체는 이 필드를 지원한다).
+            extra_body={"temperature": params.temperature},
         )
     except anthropic.AuthenticationError as exc:
         raise AIRequestError(f"AI API 인증에 실패했습니다. API Key를 확인하세요. ({exc})") from exc

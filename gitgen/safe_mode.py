@@ -8,8 +8,8 @@ from dataclasses import dataclass, field
 # (A) 민감정보로 의심되는 패턴을 마스킹한다.
 # 패턴은 실무에서 자주 보이는 형태를 기준으로 하며, 필요에 따라 확장 가능하다.
 MASK_PATTERNS: list[tuple[str, re.Pattern[str]]] = [
-    ("OpenAI-style key", re.compile(r"sk-[A-Za-z0-9_-]{20,}")),
     ("Anthropic key", re.compile(r"sk-ant-[A-Za-z0-9_-]{20,}")),
+    ("OpenAI-style key", re.compile(r"sk-[A-Za-z0-9_-]{20,}")),
     ("GitHub token", re.compile(r"gh[pousr]_[A-Za-z0-9]{20,}")),
     ("AWS Access Key", re.compile(r"AKIA[0-9A-Z]{16}")),
     ("Slack token", re.compile(r"xox[baprs]-[A-Za-z0-9-]{10,}")),
@@ -63,6 +63,7 @@ def limit_diff(diff_text: str, max_files: int = 10, max_lines: int = 200) -> Dif
     total_files = len(file_chunks)
 
     included_chunks: list[str] = []
+    included_files = 0
     used_lines = 0
     truncated = False
 
@@ -76,10 +77,12 @@ def limit_diff(diff_text: str, max_files: int = 10, max_lines: int = 200) -> Dif
             included_chunks.append("\n".join(chunk_lines[:remaining]))
             included_chunks.append(f"... (이하 {len(chunk_lines) - remaining}줄 생략됨)")
             used_lines = max_lines
+            included_files += 1
             truncated = True
             break
         included_chunks.append(chunk)
         used_lines += len(chunk_lines)
+        included_files += 1
 
     if total_files > max_files:
         truncated = True
@@ -90,12 +93,12 @@ def limit_diff(diff_text: str, max_files: int = 10, max_lines: int = 200) -> Dif
     if truncated:
         result_text += (
             f"\n\n[SAFE-MODE] diff 일부만 전송됨 "
-            f"(파일 {min(len(file_chunks), max_files)}/{total_files}, 최대 {max_lines}줄 제한)"
+            f"(파일 {included_files}/{total_files}, 최대 {max_lines}줄 제한)"
         )
 
     return DiffLimitResult(
         diff_text=result_text,
-        included_files=min(len(file_chunks), max_files),
+        included_files=included_files,
         total_files=total_files,
         truncated=truncated,
         dropped_lines=dropped_lines,
