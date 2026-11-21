@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import os
 import sys
 
 from . import ai_client, formatter, git_utils, safe_mode, templates
@@ -17,10 +18,17 @@ def _build_parser() -> argparse.ArgumentParser:
 
     def add_common_options(sub: argparse.ArgumentParser) -> None:
         sub.add_argument(
+            "-provider", "--provider",
+            dest="provider",
+            choices=ai_client.PROVIDERS,
+            default=os.environ.get("AI_PROVIDER", "anthropic"),
+            help="API 규격: anthropic(/v1/messages) 또는 openai(/v1/chat/completions) 호환 (기본값: anthropic, 환경변수 AI_PROVIDER)",
+        )
+        sub.add_argument(
             "-model", "--model",
             dest="model",
-            default="claude-sonnet-5",
-            help="사용할 AI 모델 (기본값: claude-sonnet-5)",
+            default="claude-sonnet-4",
+            help="사용할 AI 모델 (기본값: claude-sonnet-4)",
         )
         sub.add_argument(
             "-temperature", "--temperature",
@@ -109,7 +117,7 @@ def run_commit(args: argparse.Namespace) -> int:
     status_text, diff_text = prepared
 
     system_prompt, user_prompt = templates.build_commit_prompt(status_text, diff_text)
-    params = ai_client.AIParams(model=args.model, temperature=args.temperature, max_tokens=args.max_tokens)
+    params = ai_client.AIParams(model=args.model, temperature=args.temperature, max_tokens=args.max_tokens, provider=args.provider)
 
     _log("[INFO] AI API 요청 중...")
     try:
@@ -146,7 +154,7 @@ def run_pr(args: argparse.Namespace) -> int:
     status_text, diff_text = prepared
 
     system_prompt, user_prompt = templates.build_pr_prompt(branch, status_text, diff_text)
-    params = ai_client.AIParams(model=args.model, temperature=args.temperature, max_tokens=args.max_tokens)
+    params = ai_client.AIParams(model=args.model, temperature=args.temperature, max_tokens=args.max_tokens, provider=args.provider)
 
     _log("[INFO] AI API 요청 중...")
     try:

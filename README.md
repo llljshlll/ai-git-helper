@@ -25,6 +25,22 @@ Anthropic Claude API Key는 **환경변수로만** 관리하며 코드에 하드
 export ANTHROPIC_API_KEY="sk-ant-여기에_발급받은_키"
 ```
 
+### 코디세이 전용 키 (OpenAI 호환 규격)
+
+코디세이 가상 키는 OpenAI 호환 엔드포인트(`/v1/chat/completions`)에서 동작하며, 이 경로로 `claude-sonnet-4` 같은 모델도 호출할 수 있습니다.
+`-provider openai`를 지정하고 아래 환경변수를 설정하세요.
+
+```bash
+export OPENAI_BASE_URL="https://copa.codyssey.kr"
+export OPENAI_API_KEY="발급받은_가상_키"
+python3 main.py commit -provider openai -model claude-sonnet-4
+```
+
+매번 옵션을 쓰기 번거롭다면 `export AI_PROVIDER=openai`로 기본값을 바꿀 수 있습니다.
+
+> Anthropic 호환 키(`/v1/messages`)를 발급받았다면 `ANTHROPIC_BASE_URL="https://copa.codyssey.kr"`와 `ANTHROPIC_API_KEY`를 설정하면 기본 provider(`anthropic`)로 사용할 수 있습니다.
+> `ANTHROPIC_BASE_URL`을 설정하지 않으면 Anthropic 공식 API를 사용합니다.
+
 매 터미널 세션마다 다시 설정하기 번거롭다면 `~/.zshrc` 또는 `~/.bashrc`에 위 줄을 추가하세요.
 
 키가 없으면 아래와 같이 안내 메시지를 출력하고 종료합니다.
@@ -54,7 +70,8 @@ python3 main.py pr
 
 | 옵션 | 설명 | 기본값 |
 | --- | --- | --- |
-| `-model`, `--model` | 사용할 AI 모델 | `claude-sonnet-5` |
+| `-provider`, `--provider` | API 규격: `anthropic` 또는 `openai`(OpenAI 호환) | `anthropic` |
+| `-model`, `--model` | 사용할 AI 모델 | `claude-sonnet-4` |
 | `-temperature`, `--temperature` | 생성 다양성(0~1). 낮을수록 일관되고 보수적, 높을수록 다양하고 창의적인 결과 | `0.3` |
 | `-max-tokens`, `--max-tokens` | 응답 최대 토큰 수 | `1024` |
 | `-safe-mode`, `--safe-mode` | 민감정보 마스킹 + diff 전송량 제한 적용 | 꺼짐 |
@@ -64,7 +81,7 @@ python3 main.py pr
 예시:
 
 ```bash
-python3 main.py commit -model claude-sonnet-5 -temperature 0.2 -max-tokens 800
+python3 main.py commit -model claude-sonnet-4 -temperature 0.2 -max-tokens 800
 python3 main.py pr -safe-mode -max-files 5 -max-lines 150
 ```
 
